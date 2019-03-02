@@ -1,0 +1,4 @@
+build/*.wast
+build/*.abi
+build/*.wasm
+.vscode/settings.json

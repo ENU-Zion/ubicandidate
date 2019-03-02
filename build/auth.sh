@@ -1,0 +1,1 @@
+enucli -u http://3.1.39.190:10802 --wallet-url=http://127.0.0.1:8901 set account permission ubicandidate active '{"threshold": 1,"keys": [{"key": "ENU5fPxmiSHviXoze18cjKA6eWAKmSGrgfLpB6Me6FFqw1HYwfHRf","weight": 1}],"accounts": [{"permission":{"actor":"ubicandidate","permission":"enumivo.code"},"weight":1}]}' owner -p ubicandidate
