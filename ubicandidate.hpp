@@ -70,6 +70,7 @@ private:
   void add_candidate(const account_name &user)
   {
     enumivo_assert(_candidate.find(user) == _candidate.end(), "candidate exists");
+    enumivo_assert(_member.find(user) == _member.end(), "member exists");
 
     _candidate.emplace(_self, [&](auto &c) {
       c.name = user;
