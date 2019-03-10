@@ -60,6 +60,8 @@ void ubicandidate::vote(const account_name &voter, const account_name &applicant
 
   enumivo_assert(exist == 0, "already voted");
 
+  //TODO:change vote
+
   if (opinion)
   {
     auto list = candidate_itr->yes_list;

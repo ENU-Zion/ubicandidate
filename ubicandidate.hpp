@@ -11,9 +11,9 @@ using namespace std;
 #define ADMIN N(qsx.io)
 #define ACTIVE_THRESHOLD 100
 #define APPLICATION_WAIT_TIME (uint64_t(30) * 24 * 60 * 60 * 1000)
-#define VOTE_RATE (1 / 2)
-#define WIN_RATE (2 / 3)
-#define NO_REWARD_RATE (98 / 100)
+#define VOTE_RATE 50
+#define WIN_RATE 66
+#define NO_REWARD_RATE 98
 
 class ubicandidate : public contract
 {
@@ -129,7 +129,7 @@ private:
       return;
     } */
 
-    if (yes_num / member_num >= WIN_RATE)
+    if (yes_num / member_num * 100 >= WIN_RATE)
     {
       //get enough vote , do not need wait 30 days.
       close_application(user, true, true);
@@ -139,29 +139,18 @@ private:
     if ((now() - candidate.apply_time) > APPLICATION_WAIT_TIME)
     {
       // voter number enough
-      if (voter_num / member_num >= VOTE_RATE)
+      if (voter_num / member_num * 100 >= VOTE_RATE)
       {
-        if (yes_num / voter_num >= WIN_RATE)
+        //auto reward_flag = (yes_num / voter_num  *100>= NO_REWARD_RATE || no_num / voter_num *100 >= NO_REWARD_RATE) ? false : true;
+        //test
+        auto reward_flag = true;
+        if (yes_num / voter_num * 100 >= WIN_RATE)
         {
-          if (yes_num / voter_num >= NO_REWARD_RATE)
-          {
-            close_application(user, true, false);
-          }
-          else
-          {
-            close_application(user, true, true);
-          }
+          close_application(user, true, reward_flag);
         }
-        else if (no_num / voter_num >= WIN_RATE)
+        else if (no_num / voter_num * 100 >= WIN_RATE)
         {
-          if (no_num / voter_num >= NO_REWARD_RATE)
-          {
-            close_application(user, false, false);
-          }
-          else
-          {
-            close_application(user, false, true);
-          }
+          close_application(user, false, reward_flag);
         }
         else
         {
@@ -178,18 +167,7 @@ private:
 
   void close_application(const account_name &user, bool pass_flag, bool reward_flag)
   {
-    //change table data
     auto candidate_itr = _candidate.find(user);
-    if (pass_flag)
-    {
-      add_member(user);
-    }
-    else
-    {
-      _candidate.modify(candidate_itr, 0, [&](auto &c) {
-        c.close_time = now();
-      });
-    }
 
     //give reward
     //TODO is simple logic now
@@ -203,6 +181,18 @@ private:
                std::make_tuple(_self, voter, asset(10000, S(4, ENU)), std::string("reward of UBI community voting of applicant:") + (name{user}).to_string()))
             .send();
       }
+    }
+
+    //change table data
+    if (pass_flag)
+    {
+      add_member(user);
+    }
+    else
+    {
+      _candidate.modify(candidate_itr, 0, [&](auto &c) {
+        c.close_time = now();
+      });
     }
   }
 
