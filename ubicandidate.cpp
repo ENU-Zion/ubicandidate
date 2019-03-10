@@ -21,7 +21,7 @@ void ubicandidate::reset()
 void ubicandidate::add(const account_name &user)
 {
   require_auth(ADMIN);
-  enumivo_assert(!is_active(), "ubi community have activate");
+  enumivo_assert(!is_active(), "ubi community have activated");
 
   add_member(user);
 }
@@ -37,18 +37,23 @@ void ubicandidate::apply(const account_name &user)
       _self,
       N(activate),
       std::make_tuple(user));
-  txn.delay_sec = 60 * 60 * 24 * 30;
+  txn.delay_sec = 60 * 60 * 24 * 30 + 60; //TODO change to define
   txn.send(now(), _self, false);
 }
 
 void ubicandidate::vote(const account_name &voter, const account_name &applicant, const bool opinion)
 {
   require_auth(voter);
+  //test
+  //enumivo_assert(is_active(), "ubi community have not activated");
 
-  //todo:check voter in member
+  //check voter in member
+  _member.get(voter, "you are not member, can not vote!");
 
   auto candidate_itr = _candidate.find(applicant);
   enumivo_assert(candidate_itr != _candidate.end(), "applicant not found");
+
+  enumivo_assert(candidate_itr->close_time == 0, "applicaion is closed");
 
   auto exist = std::count(candidate_itr->yes_list.begin(), candidate_itr->yes_list.end(), voter) +
                std::count(candidate_itr->no_list.begin(), candidate_itr->no_list.end(), voter);
@@ -74,6 +79,11 @@ void ubicandidate::vote(const account_name &voter, const account_name &applicant
 }
 
 void ubicandidate::activate(const account_name &user)
+{
+  check_result(user);
+}
+
+void ubicandidate::claim(const account_name &user)
 {
   //todo
 }

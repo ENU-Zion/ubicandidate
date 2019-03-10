@@ -9,6 +9,11 @@ using namespace enumivo;
 using namespace std;
 
 #define ADMIN N(qsx.io)
+#define ACTIVE_THRESHOLD 100
+#define APPLICATION_WAIT_TIME (uint64_t(30) * 24 * 60 * 60 * 1000)
+#define VOTE_RATE (1 / 2)
+#define WIN_RATE (2 / 3)
+#define NO_REWARD_RATE (98 / 100)
 
 class ubicandidate : public contract
 {
@@ -27,6 +32,9 @@ public:
 
   // @abi action
   void activate(const account_name &user);
+
+  // @abi action
+  void claim(const account_name &user);
 
   // @abi action
   void vote(const account_name &voter, const account_name &applicant, const bool opinion);
@@ -69,28 +77,133 @@ private:
 
   void add_candidate(const account_name &user)
   {
-    enumivo_assert(_candidate.find(user) == _candidate.end(), "candidate exists");
     enumivo_assert(_member.find(user) == _member.end(), "member exists");
+    //enumivo_assert(_candidate.find(user) == _candidate.end(), "candidate exists");
+    auto candidate_itr = _candidate.find(user);
+    if (candidate_itr != _candidate.end())
+    {
+      enumivo_assert(now() - candidate_itr->close_time > APPLICATION_WAIT_TIME, "can not apply again in 30days");
+      _candidate.erase(candidate_itr);
+    }
+    else
+    {
+      //add number to global
+      enumivo_assert(_global.exists(), "global not exists");
+      global_state _gstate;
+      _gstate = _global.get();
+      _gstate.candidate_num = _gstate.candidate_num + 1;
+      _global.set(_gstate, _self);
+    }
 
     _candidate.emplace(_self, [&](auto &c) {
       c.name = user;
       c.apply_time = now();
     });
-
-    //add number to global
-    enumivo_assert(_global.exists(), "global not exists");
-    global_state _gstate;
-    _gstate = _global.get();
-    _gstate.candidate_num = _gstate.candidate_num + 1;
-    _global.set(_gstate, _self);
   }
 
+  /*
+  check is community active
+  */
   bool is_active()
   {
     enumivo_assert(_global.exists(), "global not exists");
     global_state _gstate;
     _gstate = _global.get();
-    return _gstate.member_num > 1000;
+    return _gstate.member_num > ACTIVE_THRESHOLD;
+  }
+
+  /* check application result */
+  void check_result(const account_name &user)
+  {
+    const auto &candidate = _candidate.get(user, "you have not apply!");
+    global_state _gstate = _global.get();
+    auto member_num = _gstate.member_num;
+    auto yes_num = candidate.yes_list.size();
+    auto no_num = candidate.no_list.size();
+    auto voter_num = yes_num + no_num;
+
+    //ubi community have activated
+    //test
+    /* if (!is_active())
+    {
+      return;
+    } */
+
+    if (yes_num / member_num >= WIN_RATE)
+    {
+      //get enough vote , do not need wait 30 days.
+      close_application(user, true, true);
+    }
+
+    //time to close application
+    if ((now() - candidate.apply_time) > APPLICATION_WAIT_TIME)
+    {
+      // voter number enough
+      if (voter_num / member_num >= VOTE_RATE)
+      {
+        if (yes_num / voter_num >= WIN_RATE)
+        {
+          if (yes_num / voter_num >= NO_REWARD_RATE)
+          {
+            close_application(user, true, false);
+          }
+          else
+          {
+            close_application(user, true, true);
+          }
+        }
+        else if (no_num / voter_num >= WIN_RATE)
+        {
+          if (no_num / voter_num >= NO_REWARD_RATE)
+          {
+            close_application(user, false, false);
+          }
+          else
+          {
+            close_application(user, false, true);
+          }
+        }
+        else
+        {
+          //TODO : if this occasion should reward?
+          close_application(user, false, false);
+        }
+      }
+      else
+      {
+        close_application(user, false, false);
+      }
+    }
+  }
+
+  void close_application(const account_name &user, bool pass_flag, bool reward_flag)
+  {
+    //change table data
+    auto candidate_itr = _candidate.find(user);
+    if (pass_flag)
+    {
+      add_member(user);
+    }
+    else
+    {
+      _candidate.modify(candidate_itr, 0, [&](auto &c) {
+        c.close_time = now();
+      });
+    }
+
+    //give reward
+    //TODO is simple logic now
+    if (reward_flag)
+    {
+      auto reward_list = pass_flag ? candidate_itr->yes_list : candidate_itr->no_list;
+
+      for (auto voter : reward_list)
+      {
+        action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
+               std::make_tuple(_self, voter, asset(10000, S(4, ENU)), std::string("reward of UBI community voting of applicant:") + (name{user}).to_string()))
+            .send();
+      }
+    }
   }
 
   /* uint64_t _random(account_name user, uint64_t range)
@@ -121,10 +234,11 @@ private:
   {
     account_name name;
     uint64_t apply_time = 0;
+    uint64_t close_time = 0;
     vector<account_name> yes_list;
     vector<account_name> no_list;
     uint64_t primary_key() const { return name; }
-    ENULIB_SERIALIZE(candidate, (name)(apply_time)(yes_list)(no_list))
+    ENULIB_SERIALIZE(candidate, (name)(apply_time)(close_time)(yes_list)(no_list))
   };
 
   typedef enumivo::multi_index<N(candidate), candidate> candidate_index;
@@ -141,4 +255,4 @@ private:
   global_state_singleton _global;
 };
 
-ENUMIVO_ABI(ubicandidate, (add)(reset)(apply)(vote)(activate))
+ENUMIVO_ABI(ubicandidate, (add)(reset)(apply)(vote)(activate)(claim))
