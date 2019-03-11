@@ -11,6 +11,7 @@ using namespace std;
 #define ADMIN N(qsx.io)
 #define ACTIVE_THRESHOLD 100
 #define APPLICATION_WAIT_TIME (uint64_t(30) * 24 * 60 * 60 * 1000)
+#define CLAIM_WAIT_TIME (uint64_t(1) * 24 * 60 * 60 * 1000)
 #define VOTE_RATE 50
 #define WIN_RATE 66
 #define NO_REWARD_RATE 98
@@ -73,6 +74,23 @@ private:
     enumivo_assert(_gstate.candidate_num > 0, "candidate_num should >0");
     _gstate.candidate_num = _gstate.candidate_num - 1;
     _global.set(_gstate, _self);
+  }
+
+  void claim_reward(const account_name &user)
+  {
+    auto member_itr = _member.find(user);
+    enumivo_assert(member_itr != _member.end(), "member not exists");
+    enumivo_assert((now() - member_itr->last_claim_time) > CLAIM_WAIT_TIME, "claim once per 24 hours");
+
+    _member.modify(member_itr, 0, [&](auto &m) {
+      m.last_claim_time = now();
+    });
+
+    //todo:transfer ubi
+
+    action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
+           std::make_tuple(_self, user, asset(1, S(4, ENU)), std::string("reward of UBI")))
+        .send();
   }
 
   void add_candidate(const account_name &user)
@@ -178,7 +196,7 @@ private:
       for (auto voter : reward_list)
       {
         action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
-               std::make_tuple(_self, voter, asset(10000, S(4, ENU)), std::string("reward of UBI community voting of applicant:") + (name{user}).to_string()))
+               std::make_tuple(_self, voter, asset(1, S(4, ENU)), std::string("reward of UBI community voting of applicant:") + (name{user}).to_string()))
             .send();
       }
     }

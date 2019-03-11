@@ -87,5 +87,5 @@ void ubicandidate::activate(const account_name &user)
 
 void ubicandidate::claim(const account_name &user)
 {
-  //todo
+  claim_reward(user);
 }
