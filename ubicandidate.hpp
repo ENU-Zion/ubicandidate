@@ -158,7 +158,9 @@ private:
       // voter number enough
       if (voter_num / member_num * 100 >= VOTE_RATE)
       {
-        auto reward_flag = (yes_num / voter_num  *100>= NO_REWARD_RATE || no_num / voter_num *100 >= NO_REWARD_RATE) ? false : true;
+        //to be decide
+        //auto reward_flag = (yes_num / voter_num  *100>= NO_REWARD_RATE || no_num / voter_num *100 >= NO_REWARD_RATE) ? false : true;
+        auto reward_flag = true;
 
         if (yes_num / voter_num * 100 >= WIN_RATE)
         {
