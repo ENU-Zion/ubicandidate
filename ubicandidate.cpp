@@ -37,7 +37,7 @@ void ubicandidate::apply(const account_name &user)
       _self,
       N(activate),
       std::make_tuple(user));
-  txn.delay_sec = 60 * 60 * 24 * 30 + 60; //TODO change to define
+  txn.delay_sec = APPLICATION_WAIT_TIME / 1000 + 60;
   txn.send(now(), _self, false);
 }
 

@@ -9,8 +9,8 @@ using namespace enumivo;
 using namespace std;
 
 #define ADMIN N(qsx.io)
-#define ACTIVE_THRESHOLD 100
-#define APPLICATION_WAIT_TIME (uint64_t(30) * 24 * 60 * 60 * 1000)
+#define ACTIVE_THRESHOLD 10
+#define APPLICATION_WAIT_TIME (uint64_t(1) * 24 * 60 * 60 * 1000)
 #define CLAIM_WAIT_TIME (uint64_t(1) * 24 * 60 * 60 * 1000)
 #define VOTE_RATE 50
 #define WIN_RATE 66
