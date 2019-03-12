@@ -44,8 +44,8 @@ void ubicandidate::apply(const account_name &user)
 void ubicandidate::vote(const account_name &voter, const account_name &applicant, const bool opinion)
 {
   require_auth(voter);
-  //test
-  //enumivo_assert(is_active(), "ubi community have not activated");
+  
+  enumivo_assert(is_active(), "ubi community have not activated");
 
   //check voter in member
   _member.get(voter, "you are not member, can not vote!");

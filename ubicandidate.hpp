@@ -127,7 +127,7 @@ private:
     enumivo_assert(_global.exists(), "global not exists");
     global_state _gstate;
     _gstate = _global.get();
-    return _gstate.member_num > ACTIVE_THRESHOLD;
+    return _gstate.member_num >= ACTIVE_THRESHOLD;
   }
 
   /* check application result */
@@ -141,11 +141,10 @@ private:
     auto voter_num = yes_num + no_num;
 
     //ubi community have activated
-    //test
-    /* if (!is_active())
+    if (!is_active())
     {
       return;
-    } */
+    }
 
     if (yes_num / member_num * 100 >= WIN_RATE)
     {
@@ -159,9 +158,8 @@ private:
       // voter number enough
       if (voter_num / member_num * 100 >= VOTE_RATE)
       {
-        //auto reward_flag = (yes_num / voter_num  *100>= NO_REWARD_RATE || no_num / voter_num *100 >= NO_REWARD_RATE) ? false : true;
-        //test
-        auto reward_flag = true;
+        auto reward_flag = (yes_num / voter_num  *100>= NO_REWARD_RATE || no_num / voter_num *100 >= NO_REWARD_RATE) ? false : true;
+
         if (yes_num / voter_num * 100 >= WIN_RATE)
         {
           close_application(user, true, reward_flag);
