@@ -10,7 +10,8 @@ using namespace std;
 
 #define ADMIN N(qsx.io)
 #define ACTIVE_THRESHOLD 10
-#define APPLICATION_WAIT_TIME (uint64_t(1) * 24 * 60 * 60)
+#define APPLICATION_WAIT_TIME (uint64_t(3) * 24 * 60 * 60)
+#define RETRY_WAIT_TIME (uint64_t(1) * 24 * 60 * 60)
 #define CLAIM_WAIT_TIME (uint64_t(1) * 24 * 60 * 60)
 #define VOTE_RATE 50
 #define WIN_RATE 66
@@ -100,7 +101,7 @@ private:
     auto candidate_itr = _candidate.find(user);
     if (candidate_itr != _candidate.end())
     {
-      enumivo_assert(now() - candidate_itr->close_time > APPLICATION_WAIT_TIME, "can not apply again in 30days");
+      enumivo_assert(now() - candidate_itr->close_time > RETRY_WAIT_TIME, "can not apply again in 30days");
       _candidate.erase(candidate_itr);
     }
     else
@@ -146,27 +147,26 @@ private:
       return;
     }
 
-    if (yes_num / member_num * 100 >= WIN_RATE)
+    if (yes_num * 100 / member_num >= WIN_RATE)
     {
       //get enough vote , do not need wait 30 days.
       close_application(user, true, true);
     }
-
     //time to close application
-    if ((now() - candidate.apply_time) > APPLICATION_WAIT_TIME)
+    else if ((now() - candidate.apply_time) > APPLICATION_WAIT_TIME)
     {
       // voter number enough
-      if (voter_num / member_num * 100 >= VOTE_RATE)
+      if (voter_num * 100 / member_num >= VOTE_RATE)
       {
         //to be decide
-        //auto reward_flag = (yes_num / voter_num  *100>= NO_REWARD_RATE || no_num / voter_num *100 >= NO_REWARD_RATE) ? false : true;
+        //auto reward_flag = (yes_num  *100/ voter_num >= NO_REWARD_RATE || no_num*100 / voter_num  >= NO_REWARD_RATE) ? false : true;
         auto reward_flag = true;
 
-        if (yes_num / voter_num * 100 >= WIN_RATE)
+        if (yes_num * 100 / voter_num >= WIN_RATE)
         {
           close_application(user, true, reward_flag);
         }
-        else if (no_num / voter_num * 100 >= WIN_RATE)
+        else if (no_num * 100 / voter_num >= WIN_RATE)
         {
           close_application(user, false, reward_flag);
         }
@@ -180,6 +180,10 @@ private:
       {
         close_application(user, false, false);
       }
+    }
+    else
+    {
+      enumivo_assert(0, "voting is going on");
     }
   }
 
