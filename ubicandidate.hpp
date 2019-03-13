@@ -44,6 +44,9 @@ public:
   // @abi action
   void reset();
 
+  // @abi action
+  void remove(const account_name &user);
+
 private:
   void init()
   {
@@ -74,6 +77,22 @@ private:
     _gstate.member_num = _gstate.member_num + 1;
     enumivo_assert(_gstate.candidate_num > 0, "candidate_num should >0");
     _gstate.candidate_num = _gstate.candidate_num - 1;
+    _global.set(_gstate, _self);
+  }
+
+  void remove_member(const account_name &user)
+  {
+    //del member
+    auto itr = _member.find(user);
+    enumivo_assert(itr != _member.end(), "member not found");
+    _member.erase(itr);
+
+    //add number to global
+    enumivo_assert(_global.exists(), "global not exists");
+    global_state _gstate;
+    _gstate = _global.get();
+    enumivo_assert(_gstate.member_num > 0, "candidate_num should >0");
+    _gstate.member_num = _gstate.member_num - 1;
     _global.set(_gstate, _self);
   }
 
@@ -267,4 +286,4 @@ private:
   global_state_singleton _global;
 };
 
-ENUMIVO_ABI(ubicandidate, (add)(reset)(apply)(vote)(activate)(claim))
+ENUMIVO_ABI(ubicandidate, (add)(reset)(apply)(vote)(activate)(claim)(remove))

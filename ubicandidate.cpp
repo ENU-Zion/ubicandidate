@@ -26,6 +26,14 @@ void ubicandidate::add(const account_name &user)
   add_member(user);
 }
 
+void ubicandidate::remove(const account_name &user)
+{
+  require_auth(ADMIN);
+  //enumivo_assert(!is_active(), "ubi community have activated");
+
+  remove_member(user);
+}
+
 void ubicandidate::apply(const account_name &user)
 {
   require_auth(user);
