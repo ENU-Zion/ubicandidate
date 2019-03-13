@@ -10,8 +10,8 @@ using namespace std;
 
 #define ADMIN N(qsx.io)
 #define ACTIVE_THRESHOLD 10
-#define APPLICATION_WAIT_TIME (uint64_t(1) * 24 * 60 * 60 * 1000)
-#define CLAIM_WAIT_TIME (uint64_t(1) * 24 * 60 * 60 * 1000)
+#define APPLICATION_WAIT_TIME (uint64_t(1) * 24 * 60 * 60)
+#define CLAIM_WAIT_TIME (uint64_t(1) * 24 * 60 * 60)
 #define VOTE_RATE 50
 #define WIN_RATE 66
 #define NO_REWARD_RATE 98

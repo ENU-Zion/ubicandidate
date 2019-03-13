@@ -37,14 +37,14 @@ void ubicandidate::apply(const account_name &user)
       _self,
       N(activate),
       std::make_tuple(user));
-  txn.delay_sec = APPLICATION_WAIT_TIME / 1000 + 60;
+  txn.delay_sec = APPLICATION_WAIT_TIME + 60;
   txn.send(now(), _self, false);
 }
 
 void ubicandidate::vote(const account_name &voter, const account_name &applicant, const bool opinion)
 {
   require_auth(voter);
-  
+
   enumivo_assert(is_active(), "ubi community have not activated");
 
   //check voter in member
