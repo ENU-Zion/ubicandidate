@@ -23,6 +23,7 @@ public:
   ubicandidate(account_name self)
       : contract(self),
         _member(_self, _self),
+        _vote(_self, _self),
         _candidate(_self, _self),
         _global(_self, _self){};
 
@@ -39,7 +40,7 @@ public:
   void claim(const account_name &user);
 
   // @abi action
-  void vote(const account_name &voter, const account_name &applicant, const bool opinion);
+  void vote(const account_name &voter, const account_name &candidate, const bool opinion, const string vote_comment);
 
   // @abi action
   void reset();
@@ -219,7 +220,7 @@ private:
       for (auto voter : reward_list)
       {
         action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
-               std::make_tuple(_self, voter, asset(1, S(4, ENU)), std::string("reward of UBI community voting of applicant:") + (name{user}).to_string()))
+               std::make_tuple(_self, voter, asset(1, S(4, ENU)), std::string("reward of UBI community voting of candidate:") + (name{user}).to_string()))
             .send();
       }
     }
@@ -259,6 +260,29 @@ private:
 
   typedef enumivo::multi_index<N(member), member_info> member_index;
   member_index _member;
+
+  // concatenation of ids
+  static uint128_t combine_ids(const uint64_t &x, const uint64_t &y)
+  {
+    return (uint128_t{x} << 64) | y;
+  }
+
+  // @abi table vote i64
+  struct vote_record
+  {
+    account_name voter;
+    account_name candidate;
+    string content;
+    uint64_t vote_time;
+    uint128_t primary_key() const
+    {
+      return combine_ids(voter, candidate);
+    }
+    ENULIB_SERIALIZE(vote_record, (voter)(candidate)(content)(vote_time))
+  };
+
+  typedef enumivo::multi_index<N(vote), vote_record> vote_index;
+  vote_index _vote;
 
   // @abi table candidate i64
   struct candidate
