@@ -289,8 +289,10 @@ private:
     string content;
     uint64_t vote_time;
     uint64_t primary_key() const { return id; }
+    uint64_t get_by_candidate() const { return candidate; }
     uint128_t get_record() const
     {
+      print(combine_ids(voter, candidate));
       return combine_ids(voter, candidate);
     }
     ENULIB_SERIALIZE(vote_record, (id)(voter)(candidate)(opinion)(content)(vote_time))
@@ -298,7 +300,9 @@ private:
 
   /* typedef enumivo::multi_index<N(vote), vote_record> vote_index;
   vote_index _vote; */
-  typedef multi_index<N(vote), vote_record, indexed_by<N(get_record), const_mem_fun<vote_record, uint128_t, &vote_record::get_record>>> vote_index;
+  typedef multi_index<N(vote), vote_record, indexed_by<N(get_by_candidate), const_mem_fun<vote_record, uint64_t, &vote_record::get_by_candidate>>,
+                      indexed_by<N(get_record), const_mem_fun<vote_record, uint128_t, &vote_record::get_record>>>
+      vote_index;
   vote_index _vote;
 
   // @abi table candidate i64
