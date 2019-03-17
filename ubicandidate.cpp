@@ -21,7 +21,7 @@ void ubicandidate::reset()
     _vote.erase(itr3);
     itr3 = _vote.begin();
   }
-  ubicandidate::init();
+  _global.remove();
 }
 
 void ubicandidate::add(const account_name &user)
@@ -53,7 +53,7 @@ void ubicandidate::apply(const account_name &user)
       N(activate),
       std::make_tuple(user));
   txn.delay_sec = APPLICATION_WAIT_TIME + 60;
-  txn.send(now(), _self, false);
+  txn.send(get_next_id(), _self, false);
 }
 
 void ubicandidate::vote(const account_name &voter, const account_name &candidate, const bool opinion, const string vote_comment)
@@ -101,19 +101,23 @@ void ubicandidate::vote(const account_name &voter, const account_name &candidate
 
   //update vote
   auto vote_id = combine_ids(voter, candidate);
-  auto vote_itr = _vote.find(vote_id);
-  if (vote_itr == _vote.end())
+  auto record_index = _vote.get_index<N(get_record)>();
+  auto vote_itr = record_index.find(vote_id);
+  if (vote_itr == record_index.end())
   {
     _vote.emplace(voter, [&](auto &c) {
+      c.id = get_next_id();
       c.voter = voter;
       c.candidate = candidate;
+      c.opinion = opinion;
       c.content = vote_comment;
       c.vote_time = now();
     });
   }
   else
   {
-    _vote.modify(vote_itr, 0, [&](auto &c) {
+    record_index.modify(vote_itr, 0, [&](auto &c) {
+      c.opinion = opinion;
       c.content = vote_comment;
       c.vote_time = now();
     });

@@ -46,16 +46,28 @@ public:
   void reset();
 
   // @abi action
-  void remove(const account_name &user);
-
-private:
   void init()
   {
-    _global.remove();
     global_state _gstate;
+    _gstate.global_id = 0;
     _gstate.member_num = 0;
     _gstate.candidate_num = 0;
     _global.set(_gstate, _self);
+  }
+
+  // @abi action
+  void remove(const account_name &user);
+
+private:
+  uint64_t get_next_id()
+  {
+    enumivo_assert(_global.exists(), "global not exists");
+    global_state _gstate;
+    _gstate = _global.get();
+    auto next_id = _gstate.global_id + 1;
+    _gstate.global_id = next_id;
+    _global.set(_gstate, _self);
+    return next_id;
   }
 
   void add_member(const account_name &user)
@@ -270,18 +282,23 @@ private:
   // @abi table vote i64
   struct vote_record
   {
+    uint64_t id;
     account_name voter;
     account_name candidate;
+    bool opinion;
     string content;
     uint64_t vote_time;
-    uint128_t primary_key() const
+    uint64_t primary_key() const { return id; }
+    uint128_t get_record() const
     {
       return combine_ids(voter, candidate);
     }
-    ENULIB_SERIALIZE(vote_record, (voter)(candidate)(content)(vote_time))
+    ENULIB_SERIALIZE(vote_record, (id)(voter)(candidate)(opinion)(content)(vote_time))
   };
 
-  typedef enumivo::multi_index<N(vote), vote_record> vote_index;
+  /* typedef enumivo::multi_index<N(vote), vote_record> vote_index;
+  vote_index _vote; */
+  typedef multi_index<N(vote), vote_record, indexed_by<N(get_record), const_mem_fun<vote_record, uint128_t, &vote_record::get_record>>> vote_index;
   vote_index _vote;
 
   // @abi table candidate i64
@@ -302,12 +319,13 @@ private:
   // @abi table global i64
   struct global_state
   {
+    uint64_t global_id = 0;
     uint64_t member_num = 0;
     uint64_t candidate_num = 0;
-    ENULIB_SERIALIZE(global_state, (member_num)(candidate_num))
+    ENULIB_SERIALIZE(global_state, (global_id)(member_num)(candidate_num))
   };
   typedef enumivo::singleton<N(global), global_state> global_state_singleton;
   global_state_singleton _global;
 };
 
-ENUMIVO_ABI(ubicandidate, (add)(reset)(apply)(vote)(activate)(claim)(remove))
+ENUMIVO_ABI(ubicandidate, (init)(add)(reset)(apply)(vote)(activate)(claim)(remove))
