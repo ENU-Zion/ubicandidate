@@ -122,7 +122,7 @@ private:
     //todo:transfer ubi
 
     action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
-           std::make_tuple(_self, user, asset(1, S(4, ENU)), std::string("reward of UBI")))
+           std::make_tuple(_self, user, asset(10000, S(4, ENU)), std::string("reward of UBI")))
         .send();
   }
 
@@ -232,7 +232,7 @@ private:
       for (auto voter : reward_list)
       {
         action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
-               std::make_tuple(_self, voter, asset(1, S(4, ENU)), std::string("reward of UBI community voting of candidate:") + (name{user}).to_string()))
+               std::make_tuple(_self, voter, asset(10000, S(4, ENU)), std::string("reward of UBI community voting of candidate:") + (name{user}).to_string()))
             .send();
       }
     }
