@@ -174,6 +174,7 @@ private:
     auto voter_num = yes_num + no_num;
 
     //ubi community have activated
+    //for test
     if (!is_active())
     {
       return;
@@ -219,6 +220,13 @@ private:
     }
   }
 
+  uint64_t safe_uint64_add(uint64_t a, uint64_t b)
+  {
+    uint64_t c = a + b;
+    enumivo_assert(c >= a && c >= b, "overflow!");
+    return c;
+  }
+
   void close_application(const account_name &user, bool pass_flag, bool reward_flag)
   {
     auto candidate_itr = _candidate.find(user);
@@ -227,13 +235,53 @@ private:
     //TODO is simple logic now
     if (reward_flag)
     {
-      auto reward_list = pass_flag ? candidate_itr->yes_list : candidate_itr->no_list;
+      auto voter_list = pass_flag ? candidate_itr->yes_list : candidate_itr->no_list;
 
-      for (auto voter : reward_list)
+      struct reward_record
       {
-        action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
-               std::make_tuple(_self, voter, asset(10000, S(4, ENU)), std::string("reward of UBI community voting of candidate:") + (name{user}).to_string()))
-            .send();
+        account_name voter;
+        uint64_t weight;
+      };
+
+      vector<reward_record>
+          reward_list;
+      uint64_t total_weight = 0;
+
+      for (auto voter : voter_list)
+      {
+        auto vote_id = combine_ids(voter, user);
+        auto record_index = _vote.get_index<N(get_record)>();
+        auto vote_itr = record_index.find(vote_id);
+        enumivo_assert(vote_itr != record_index.end(), "error! can not find vote record");
+        auto weight = now() - (vote_itr->vote_time);
+        struct reward_record r = {.voter = voter, .weight = weight};
+        reward_list.push_back(r);
+        total_weight = safe_uint64_add(total_weight, weight);
+
+        // print("\tweight:\t");
+        // print(weight);
+        // print("\ttotal weight:\t");
+        // print(total_weight);
+      }
+
+      auto total_reward = 10000 * voter_list.size();
+      // print("\ttotal_reward:\t");
+      // print(total_reward);
+      // print("\ttotal_weight:\t");
+      // print(total_weight);
+      for (auto reward : reward_list)
+      {
+        auto amount = total_reward * reward.weight / total_weight;
+        // print("\tweight:\t");
+        // print(reward.weight);
+        // print("\tamount:\t");
+        // print(amount);
+        if (amount > 0)
+        {
+          action(permission_level{_self, N(active)}, N(enu.token), N(transfer),
+                 std::make_tuple(_self, reward.voter, asset(amount, S(4, ENU)), std::string("reward of UBI community voting of candidate:") + (name{user}).to_string()))
+              .send();
+        }
       }
     }
 
@@ -292,7 +340,7 @@ private:
     uint64_t get_by_candidate() const { return candidate; }
     uint128_t get_record() const
     {
-      print(combine_ids(voter, candidate));
+      // print(combine_ids(voter, candidate));
       return combine_ids(voter, candidate);
     }
     ENULIB_SERIALIZE(vote_record, (id)(voter)(candidate)(opinion)(content)(vote_time))
