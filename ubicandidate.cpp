@@ -22,7 +22,6 @@ void ubicandidate::reset()
     itr3 = _vote.begin();
   }
   global_state _gstate = _global.get();
-  print(_gstate.global_id);
   for (auto i = 0; i < _gstate.global_id; i++)
   {
     cancel_deferred(i);
