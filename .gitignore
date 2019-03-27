@@ -1,3 +1,4 @@
 build/*.wast
 build/*.wasm
 .vscode/settings.json
+.vscode
